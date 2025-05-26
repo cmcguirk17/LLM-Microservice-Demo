@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  llm_app:
+    build:
+      context: .  # Directory containing the Dockerfile
+      dockerfile: Dockerfile  # Custom Dockerfile name
+    container_name: llm_microservice_app_CPU
+    ports:
+      - "8000:8000" # Map host port 8000 to container port 8000
+    # volumes:
+    #   - ./app/models:/models # Mount the local ./models directory to /models in the container
+    env_file:
+      - .env # Load environment variables from the .env file
+    # environment:
+    #   # Construct MODEL_PATH using MODEL_FILENAME from .env
+    #   MODEL_PATH: /src/app/models/${MODEL_FILENAME}
+
+    restart: unless-stopped
+    logging: 
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -1,0 +1,55 @@
+# llm-k8-deploy.yaml
+# if in deployment already update with
+# - kubectl apply -f llm-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-app-deployment
+  labels:
+    app: llm-app
+spec:
+  replicas: 1 # HPA managed
+  selector:
+    matchLabels:
+      app: llm-app
+  template:
+    metadata:
+      labels:
+        app: llm-app
+    spec:
+      containers:
+      - name: llm-app-container
+        image: ms_llm_app:k8
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: llm-app-config # metadata name in llm-k8-configmap.yaml
+        
+        # HPA Utilization
+        resources:
+          requests:
+            cpu: "4"
+            memory: "4Gi"
+
+          limits:
+            cpu: "6"
+            memory: "6Gi"
+
+        livenessProbe:
+          httpGet:
+            path: /v1/health
+            port: 8000
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /v1/health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3

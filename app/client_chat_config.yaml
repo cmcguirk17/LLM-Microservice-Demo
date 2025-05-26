@@ -1,0 +1,15 @@
+# URL of the LLM inference service
+service_url: "http://localhost:8000/v1/chat/completions"
+
+# Timeout for requests to the LLM service in seconds
+request_timeout: 120
+
+# Default parameters for LLM generation
+generation_params:
+  temperature: 0.7
+  max_tokens: 250
+
+# Logging level for the client (e.g., DEBUG, INFO, WARNING, ERROR)
+client_log_level: "INFO"
+
+default_system_prompt: "You are a helpful AI assistant."

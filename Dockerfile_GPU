@@ -1,0 +1,51 @@
+FROM nvidia/cuda:12.1.1-devel-ubuntu22.04
+
+# Prevent apt-get from asking questions during build
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Base Installs & Python 3.10 Setup
+# software-properties-common to use add-apt-repository for deadsnakes to get python3.10
+RUN apt-get update && \
+    apt-get install --yes --no-install-recommends \
+    ca-certificates \
+    build-essential \
+    git \
+    software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa -y && \
+    apt-get update && \
+    apt-get install --yes --no-install-recommends \
+    python3.10 \
+    python3.10-dev \
+    python3-pip && \
+    # Clean up apt cache
+    rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
+ENV POETRY_VERSION=2.0.0
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PATH="/root/.local/bin:${PATH}"
+
+# Copy the application code into the container
+WORKDIR /src
+COPY app/ /src/app/
+# Copy pyproject and lock file
+COPY ./README.md ./pyproject.toml ./poetry.lock /src/
+
+# Install/Setup Poetry
+RUN pip install "poetry==${POETRY_VERSION}"
+
+# Build venvironment (llama-cpp-python with GPU)
+ENV CMAKE_ARGS="-DGGML_CUDA=on"
+RUN poetry add llama-cpp-python==0.3.9
+RUN poetry install --no-interaction --no-root
+
+# Expose the port the app runs on
+EXPOSE 8000
+
+WORKDIR /src/app/
+
+# Command to run the application using Uvicorn
+# The --host 0.0.0.0 makes the server accessible from outside the container
+# --workers for production concurrency
+CMD ["poetry", "run", "uvicorn", "main:app_fastapi", "--host", "0.0.0.0", "--port", "8000"]
